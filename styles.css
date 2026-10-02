@@ -173,6 +173,13 @@ select, input[type="password"], input[type="text"] {
 .paper svg { display: block; }
 .stage .empty { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); padding: 24px; text-align: center; }
 
+.stage3d { flex: 1; min-height: 0; position: relative; background: var(--stage); touch-action: none; }
+.stage3d canvas { display: block; }
+.stage3d[data-loading]::after {
+  content: attr(data-loading);
+  position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted);
+}
+
 #print-area { display: none; }
 
 @media (max-width: 820px) {

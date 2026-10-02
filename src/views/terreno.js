@@ -3,7 +3,7 @@
 
 import { fmt, polygonArea, bbox, azimuth, bearing } from '../util.js';
 
-function pointInPolygon(x, y, pts) {
+export function pointInPolygon(x, y, pts) {
   let inside = false;
   for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
     const [xi, yi] = pts[i], [xj, yj] = pts[j];

@@ -4,6 +4,8 @@ import { parse } from './parser.js';
 import { buildDocument, drawable, renderSheet, renderView } from './render.js';
 import { EXAMPLES } from './examples.js';
 import { describeToInstructions } from './ai.js';
+import { mount3d } from './render3d.js';
+import { svgToDxf, dxfBytes } from './dxf.js';
 
 const $ = (id) => document.getElementById(id);
 const src = $('src');
@@ -32,7 +34,11 @@ if (window.claude?.use) {
 }
 
 let doc = null;
-let current = -1; // -1 = lámina completa; si no, índice de vista
+const RENDER = -2;
+let current = -1; // -1 = lámina completa, -2 = render 3D; si no, índice de vista
+let model = null;
+let viewer3d = null;
+const stage3d = $('stage3d');
 let svgText = '';
 
 // ------------------------------------------------------------ Ejemplos
@@ -64,7 +70,7 @@ document.querySelectorAll('.tabs button').forEach((b) => {
 
 function update(refit = false) {
   store.set('planmaker:text', src.value);
-  const model = parse(src.value);
+  model = parse(src.value);
   showErrors(model.errors || []);
   if (!drawable(model)) {
     doc = null;
@@ -86,7 +92,7 @@ function update(refit = false) {
     showErrors([...(model.errors || []), { line: 0, msg: `No se pudo dibujar: ${err.message}` }]);
     return;
   }
-  if (current >= doc.views.length || prevTipo !== doc.tipoLabel) current = -1;
+  if (current >= doc.views.length || (prevTipo !== doc.tipoLabel && current !== RENDER)) current = -1;
   renderTabs();
   draw(refit || prevTipo !== doc.tipoLabel);
 }
@@ -130,10 +136,21 @@ function renderTabs() {
     viewsEl.append(b);
   };
   add('Lámina completa', -1);
+  add('Render 3D', RENDER);
   doc.views.forEach((v, i) => add(v.title, i));
 }
 
 function draw(refit) {
+  const is3d = current === RENDER;
+  stage.hidden = is3d;
+  stage3d.hidden = !is3d;
+  for (const id of ['zoom-in', 'zoom-out', 'zoom-fit', 'dl-svg', 'dl-dxf']) $(id).hidden = is3d;
+  if (!window.claude?.use) $('print').hidden = is3d;
+  if (is3d) {
+    svgText = '';
+    show3d();
+    return;
+  }
   svgText = current < 0 ? renderSheet(doc) : renderView(doc, current);
   paper.innerHTML = svgText;
   const svg = paper.querySelector('svg');
@@ -143,6 +160,21 @@ function draw(refit) {
   svg.setAttribute('height', vb.height * 4);
   if (refit) fit();
   else apply();
+}
+
+async function show3d() {
+  $('msg').textContent = '';
+  try {
+    if (viewer3d) viewer3d.setModel(model);
+    else {
+      stage3d.dataset.loading = 'Cargando el render…';
+      viewer3d = await mount3d(stage3d, model);
+    }
+  } catch (err) {
+    $('msg').textContent = `No se pudo mostrar el render 3D: ${err.message}`;
+  } finally {
+    delete stage3d.dataset.loading;
+  }
 }
 
 let debounce = 0;
@@ -225,7 +257,7 @@ const center = () => {
 $('zoom-in').addEventListener('click', () => zoomAt(1.25, ...center()));
 $('zoom-out').addEventListener('click', () => zoomAt(0.8, ...center()));
 $('zoom-fit').addEventListener('click', fit);
-window.addEventListener('resize', () => fit());
+window.addEventListener('resize', () => { if (current !== RENDER) fit(); });
 
 // --------------------------------------------------------- Exportar
 
@@ -233,7 +265,7 @@ function fileName(ext) {
   const base = (doc?.nombre || 'plano')
     .normalize('NFD').replace(/[̀-ͯ]/g, '')
     .replace(/[^\w-]+/g, '_').replace(/^_+|_+$/g, '') || 'plano';
-  const part = current < 0 ? 'lamina' : doc.views[current].title.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^\w]+/g, '_').toLowerCase();
+  const part = current === RENDER ? 'render3d' : current < 0 ? 'lamina' : doc.views[current].title.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^\w]+/g, '_').toLowerCase();
   return `${base}_${part}.${ext}`;
 }
 
@@ -261,7 +293,17 @@ $('dl-svg').addEventListener('click', () => {
   download(new Blob([svgText], { type: 'image/svg+xml' }), fileName('svg'));
 });
 
+$('dl-dxf').addEventListener('click', () => {
+  if (!svgText) return;
+  download(new Blob([dxfBytes(svgToDxf(svgText))], { type: 'application/dxf' }), fileName('dxf'));
+});
+
 $('dl-png').addEventListener('click', async () => {
+  if (current === RENDER) {
+    const blob = await viewer3d?.toBlob();
+    if (blob) download(blob, fileName('png'));
+    return;
+  }
   if (!svgText) return;
   const img = new Image();
   const url = URL.createObjectURL(new Blob([svgText], { type: 'image/svg+xml' }));

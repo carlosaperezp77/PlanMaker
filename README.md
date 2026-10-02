@@ -15,6 +15,12 @@ Tres tipos de proyecto:
 Las vistas de cada lámina comparten una escala normalizada (1:50, 1:100, 2:1…)
 y la lámina A3 incluye marco, cajetín y notas (área útil, volumen, desnivel…).
 
+Además, la pestaña **Render 3D** muestra el modelo con luz y sombras para
+girarlo y acercarlo con el ratón o los dedos: la casa con sus muros, vanos,
+losas y cubierta; la pieza con sus agujeros y ranuras; el terreno como maqueta
+con su relieve y construcciones. Usa three.js, que se carga desde CDN solo al
+abrir esa pestaña.
+
 ## Uso
 
 ```bash
@@ -24,8 +30,10 @@ npm run build      # dist/planmaker.html, un único archivo que se abre sin serv
 ```
 
 Escribe las instrucciones a la izquierda; el plano se actualiza al instante. Cada
-vista puede verse sola y exportarse como **SVG**, **PNG** o **PDF** (Imprimir →
-Guardar como PDF, en A3 horizontal).
+vista puede verse sola y exportarse como **SVG**, **PNG**, **DXF** (AutoCAD y
+otros CAD, con una capa por tipo de línea, en mm de papel a la escala de la
+lámina) o **PDF** (Imprimir → Guardar como PDF, en A3 horizontal). El render 3D
+se descarga como PNG.
 
 La pestaña **Describir con IA** convierte una descripción libre ("una casa de
 un piso con tres dormitorios…") en instrucciones usando la API de Claude, con
@@ -87,4 +95,6 @@ También `rectangulo 20x30`, o una poligonal por rumbos: `lado 40 rumbo 90 cota 
 - `src/parser.js` — interpreta las instrucciones y valida (los errores indican la línea).
 - `src/svg.js` — motor de dibujo: transformación a escala, cotas, lámina y cajetín.
 - `src/views/` — vistas de edificio, pieza y terreno.
+- `src/render3d.js` — render 3D (primitivas del modelo → three.js).
+- `src/dxf.js` — conversión de la lámina SVG a DXF R12.
 - `src/app.js` — interfaz, zoom, exportación. `src/ai.js` — asistente opcional.

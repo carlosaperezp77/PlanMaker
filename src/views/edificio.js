@@ -7,16 +7,16 @@ const C30 = Math.cos(Math.PI / 6);
 const OVERHANG = 0.4;
 
 /** Habitaciones del piso p; si el piso no tiene propias, repite la planta tipo (piso 1). */
-function roomsOf(m, p) {
+export function roomsOf(m, p) {
   const own = m.rooms.filter((r) => r.piso === p);
   return own.length ? own : m.rooms.filter((r) => r.piso === 1);
 }
-function openingsOf(m, p) {
+export function openingsOf(m, p) {
   const own = m.rooms.some((r) => r.piso === p);
   return m.openings.filter((o) => o.piso === (own ? p : 1));
 }
 
-function box(rooms, t = 0) {
+export function box(rooms, t = 0) {
   return {
     minX: Math.min(...rooms.map((r) => r.x)) - t / 2,
     maxX: Math.max(...rooms.map((r) => r.x + r.w)) + t / 2,
@@ -26,7 +26,7 @@ function box(rooms, t = 0) {
 }
 
 /** Geometría de un vano sobre su muro: inicio/fin a lo largo y posición del muro. */
-function openingGeom(o) {
+export function openingGeom(o) {
   const r = o.room;
   switch (o.lado) {
     case 'S': return { horiz: true, a0: r.x + o.offset, a1: r.x + o.offset + o.ancho, at: r.y, inward: 1 };
