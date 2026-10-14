@@ -334,6 +334,7 @@ aiKey.value = store.get('planmaker:key') || '';
 aiKey.addEventListener('change', () => store.set('planmaker:key', aiKey.value.trim()));
 
 $('ai-go').addEventListener('click', async () => {
+  if (recog) recog.stop();
   const description = $('ai-text').value.trim();
   const status = $('ai-status');
   if (!description) {
@@ -361,6 +362,79 @@ $('ai-go').addEventListener('click', async () => {
     btn.disabled = false;
   }
 });
+
+// --------------------------------------------------- Dictado por voz
+
+// Web Speech API (Chrome, Edge, Safari). Donde no existe, el botón no aparece.
+const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+const micBtn = $('ai-mic');
+const micStatus = $('ai-mic-status');
+let recog = null;
+
+const MIC_ERRORS = {
+  'not-allowed': 'No hay permiso para usar el micrófono. Actívalo en el navegador o usa el dictado del teclado.',
+  'service-not-allowed': 'Este navegador o visor no permite el dictado aquí. Puedes usar el dictado del teclado de tu teléfono.',
+  'audio-capture': 'No se encontró ningún micrófono.',
+  'network': 'El dictado necesita conexión a internet.',
+  'no-speech': 'No se oyó nada. Vuelve a intentarlo.',
+  'language-not-supported': 'El dictado en español no está disponible en este navegador.',
+};
+
+function setListening(on) {
+  micBtn.setAttribute('aria-pressed', String(on));
+  micBtn.querySelector('span').textContent = on ? 'Detener' : 'Dictar';
+}
+
+function startDictation() {
+  const box = $('ai-text');
+  recog = new Recognition();
+  recog.lang = /^es\b/i.test(navigator.language) ? navigator.language : 'es-ES';
+  recog.continuous = true;
+  recog.interimResults = true;
+  let base = box.value;
+  let failed = false;
+  recog.onresult = (e) => {
+    let interim = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const t = e.results[i][0].transcript.trim();
+      if (!t) continue;
+      if (e.results[i].isFinal) {
+        base = base && !/\s$/.test(base) ? `${base} ${t}` : base + t;
+      } else {
+        interim += (interim ? ' ' : '') + t;
+      }
+    }
+    box.value = interim ? (base ? `${base} ${interim}` : interim) : base;
+    micStatus.textContent = 'Escuchando…';
+  };
+  recog.onerror = (e) => {
+    if (e.error === 'aborted') return;
+    failed = true;
+    micStatus.textContent = MIC_ERRORS[e.error] || `Error de dictado: ${e.error}`;
+  };
+  recog.onend = () => {
+    box.value = base;
+    recog = null;
+    setListening(false);
+    if (!failed) micStatus.textContent = '';
+  };
+  try {
+    recog.start();
+    setListening(true);
+    micStatus.textContent = 'Escuchando… habla con naturalidad.';
+  } catch (err) {
+    recog = null;
+    micStatus.textContent = `No se pudo iniciar el dictado: ${err.message}`;
+  }
+}
+
+if (Recognition) {
+  micBtn.hidden = false;
+  micBtn.addEventListener('click', () => {
+    if (recog) recog.stop();
+    else startDictation();
+  });
+}
 
 // ------------------------------------------------------------ Inicio
 

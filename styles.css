@@ -107,6 +107,17 @@ select, input[type="password"], input[type="text"] {
   border-radius: 8px;
   padding: 10px;
 }
+.mic-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.mic {
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 1px solid var(--line); background: var(--panel);
+  border-radius: 999px; padding: 6px 13px; cursor: pointer; font-size: 14px;
+}
+.mic[hidden] { display: none; }
+.mic[aria-pressed="true"] { background: var(--error); border-color: var(--error); color: #fff; }
+.mic[aria-pressed="true"] svg { animation: mic-pulse 1.2s ease-in-out infinite; }
+@keyframes mic-pulse { 50% { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) { .mic[aria-pressed="true"] svg { animation: none; } }
 .errors { list-style: none; margin: 0; padding: 0; font-size: 13px; max-height: 30%; overflow: auto; }
 .errors li { color: var(--error); padding: 4px 0; cursor: pointer; }
 .errors li.ok { color: var(--muted); cursor: default; }

@@ -37,7 +37,9 @@ se descarga como PNG.
 
 La pestaña **Describir con IA** convierte una descripción libre ("una casa de
 un piso con tres dormitorios…") en instrucciones usando la API de Claude, con
-la clave de API de quien la usa (se guarda solo en su navegador).
+la clave de API de quien la usa (se guarda solo en su navegador). El botón
+**Dictar** permite describirlo hablando, con el reconocimiento de voz del
+navegador (Chrome, Edge o Safari; pide permiso para el micrófono la primera vez).
 
 ## Instrucciones
 

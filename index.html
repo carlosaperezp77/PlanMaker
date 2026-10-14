@@ -34,6 +34,13 @@
       <div class="pane" data-pane="ai" hidden>
         <p class="hint">Describe lo que quieres con tus palabras. Claude lo convierte en instrucciones que puedes revisar y editar.</p>
         <textarea id="ai-text" placeholder="Ej.: Una casa de un piso de 10 x 8 m con sala, cocina, dos dormitorios y un baño, techo a dos aguas."></textarea>
+        <div class="mic-row">
+          <button id="ai-mic" class="mic" type="button" aria-pressed="false" hidden>
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3z M5 11a7 7 0 0 0 14 0 M12 18v3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <span>Dictar</span>
+          </button>
+          <span id="ai-mic-status" class="hint small" aria-live="polite"></span>
+        </div>
         <label class="field">Clave de API de Anthropic
           <input id="ai-key" type="password" autocomplete="off" placeholder="sk-ant-...">
         </label>
