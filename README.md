@@ -40,6 +40,8 @@ un piso con tres dormitorios…") en instrucciones usando la API de Claude, con
 la clave de API de quien la usa (se guarda solo en su navegador). El botón
 **Dictar** permite describirlo hablando, con el reconocimiento de voz del
 navegador (Chrome, Edge o Safari; pide permiso para el micrófono la primera vez).
+La vista previa dentro de claude.ai no permite el micrófono; para dictar, usa la
+versión publicada en GitHub Pages: https://carlosaperezp77.github.io/PlanMaker/
 
 ## Instrucciones
 

@@ -367,6 +367,7 @@ $('ai-go').addEventListener('click', async () => {
 
 // Web Speech API (Chrome, Edge, Safari). Donde no existe, el botón no aparece.
 const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+const PAGES_URL = 'https://carlosaperezp77.github.io/PlanMaker/';
 const micBtn = $('ai-mic');
 const micStatus = $('ai-mic-status');
 let recog = null;
@@ -410,7 +411,10 @@ function startDictation() {
   recog.onerror = (e) => {
     if (e.error === 'aborted') return;
     failed = true;
-    micStatus.textContent = MIC_ERRORS[e.error] || `Error de dictado: ${e.error}`;
+    const blocked = e.error === 'not-allowed' || e.error === 'service-not-allowed';
+    micStatus.textContent = blocked && window.claude?.use
+      ? `La vista previa de claude.ai no deja usar el micrófono. Abre la app en ${PAGES_URL} o usa el dictado del teclado.`
+      : MIC_ERRORS[e.error] || `Error de dictado: ${e.error}`;
   };
   recog.onend = () => {
     box.value = base;
