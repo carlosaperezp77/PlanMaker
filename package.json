@@ -1,0 +1,13 @@
+{
+  "name": "planmaker",
+  "version": "0.1.0",
+  "description": "Genera planos de planta y vistas de edificios, terrenos y piezas mecánicas a partir de instrucciones de texto.",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "node scripts/serve.mjs",
+    "test": "node --test test/*.test.mjs",
+    "build": "node scripts/build.mjs"
+  },
+  "license": "MIT"
+}

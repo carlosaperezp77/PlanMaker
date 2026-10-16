@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PlanMaker</title>
+  <meta name="description" content="Genera planos de planta y vistas de edificios, terrenos y piezas mecánicas a partir de instrucciones.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 3h18v18H3z M3 12h9 M12 3v18 M12 16h9" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+      <span>PlanMaker</span>
+    </div>
+    <label class="examples">Ejemplo
+      <select id="examples"></select>
+    </label>
+  </header>
+
+  <main class="layout">
+    <section class="editor" aria-label="Instrucciones">
+      <nav class="tabs" role="tablist">
+        <button role="tab" data-tab="text" aria-selected="true">Instrucciones</button>
+        <button role="tab" data-tab="ai">Describir con IA</button>
+        <button role="tab" data-tab="help">Guía</button>
+      </nav>
+
+      <div class="pane" data-pane="text">
+        <textarea id="src" spellcheck="false" aria-label="Instrucciones del plano"></textarea>
+        <ul id="errors" class="errors" aria-live="polite"></ul>
+      </div>
+
+      <div class="pane" data-pane="ai" hidden>
+        <p class="hint">Describe lo que quieres con tus palabras. Claude lo convierte en instrucciones que puedes revisar y editar.</p>
+        <textarea id="ai-text" placeholder="Ej.: Una casa de un piso de 10 x 8 m con sala, cocina, dos dormitorios y un baño, techo a dos aguas."></textarea>
+        <div class="mic-row">
+          <button id="ai-mic" class="mic" type="button" aria-pressed="false" hidden>
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3z M5 11a7 7 0 0 0 14 0 M12 18v3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <span>Dictar</span>
+          </button>
+          <span id="ai-mic-status" class="hint small" aria-live="polite"></span>
+        </div>
+        <label class="field">Clave de API de Anthropic
+          <input id="ai-key" type="password" autocomplete="off" placeholder="sk-ant-...">
+        </label>
+        <label class="check"><input id="ai-keep" type="checkbox"> Modificar las instrucciones actuales en vez de empezar de cero</label>
+        <button id="ai-go" class="primary">Generar instrucciones</button>
+        <p id="ai-status" class="hint" aria-live="polite"></p>
+        <p id="ai-key-note" class="hint small">La clave se guarda solo en este navegador y se envía directamente a la API de Anthropic.</p>
+      </div>
+
+      <div class="pane help" data-pane="help" hidden>
+        <p>Escribe una orden por línea. Usa <code>#</code> para comentarios. Coordenadas <code>x,y</code> con x hacia el este e y hacia el norte. Los decimales pueden ir con punto o coma (<code>0,9</code>).</p>
+        <h3>Edificio (metros)</h3>
+<pre>casa Mi casa
+pisos 2
+altura 2.8
+muro 0.15
+techo dos aguas altura 1.5
+habitacion Sala 5x4 en 0,0
+habitacion Cocina 3x4 en 5,0
+puerta Sala sur 1 a 2
+ventana Cocina este 1.2 antepecho 1
+piso 2
+habitacion Dormitorio 1 4x4 en 0,0</pre>
+        <p>Puertas y ventanas: <code>lado</code> norte, sur, este u oeste; <code>a</code> = distancia desde el extremo oeste o sur del muro (si no se da, queda centrada).</p>
+        <h3>Pieza mecánica (mm)</h3>
+<pre>pieza Soporte
+material Acero
+bloque 120x60x15
+cilindro 40 alto 35 en 60,30
+agujero 20 pasante en 60,30
+agujero 8 prof 10 en 15,15
+ranura 30x8 prof 5 en 20,26</pre>
+        <h3>Terreno (metros)</h3>
+<pre>terreno Lote 7
+punto 0,0 cota 100
+punto 30,0 cota 101
+punto 30,20 cota 103
+punto 0,20 cota 102
+cota 102.5 en 15,10
+curvas cada 0.5
+construccion Casa 10x8 en 10,6</pre>
+        <p>También: <code>rectangulo 20x30</code> o una poligonal con <code>lado 25 rumbo 90 cota 101</code> (rumbo = azimut en grados desde el norte).</p>
+      </div>
+    </section>
+
+    <section class="viewer" aria-label="Plano">
+      <div class="toolbar">
+        <div id="views" class="chips" role="tablist"></div>
+        <div class="actions">
+          <button id="zoom-out" title="Alejar" aria-label="Alejar">−</button>
+          <button id="zoom-fit" title="Ajustar" aria-label="Ajustar a la pantalla">⤢</button>
+          <button id="zoom-in" title="Acercar" aria-label="Acercar">+</button>
+          <span class="sep"></span>
+          <button id="dl-svg">SVG</button>
+          <button id="dl-dxf" title="Para AutoCAD y otros programas de CAD">DXF</button>
+          <button id="dl-png">PNG</button>
+          <button id="print">Imprimir / PDF</button>
+          <span id="msg" class="msg" aria-live="polite"></span>
+        </div>
+      </div>
+      <div id="stage" class="stage"><div id="paper" class="paper"></div></div>
+      <div id="stage3d" class="stage3d" hidden></div>
+    </section>
+  </main>
+
+  <div id="print-area" aria-hidden="true"></div>
+  <script type="module" src="src/app.js"></script>
+</body>
+</html>
