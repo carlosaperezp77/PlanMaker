@@ -432,7 +432,27 @@ function startDictation() {
   }
 }
 
-if (Recognition) {
+// La vista previa de claude.ai no da acceso al micrófono, pero el dictado del
+// sistema (Windows + H, el de macOS o el micrófono del teclado del teléfono)
+// sí escribe en el cuadro de texto. El botón enseña cómo activarlo.
+function systemDictationHint() {
+  const ua = navigator.userAgent;
+  const pf = navigator.userAgentData?.platform || ua;
+  if (/Android|iPhone|iPad|iPod/i.test(ua)) return 'Toca el micrófono 🎤 de tu teclado y habla.';
+  if (/Mac/i.test(pf)) return 'Pulsa dos veces la tecla Fn (o 🎤) para dictar y habla.';
+  if (/Win/i.test(pf)) return 'Pulsa las teclas Windows + H para dictar y habla.';
+  return 'Activa el dictado por voz de tu sistema y habla.';
+}
+
+if (window.claude?.use) {
+  micBtn.hidden = false;
+  micBtn.addEventListener('click', () => {
+    const box = $('ai-text');
+    box.focus();
+    box.setSelectionRange(box.value.length, box.value.length);
+    micStatus.textContent = systemDictationHint();
+  });
+} else if (Recognition) {
   micBtn.hidden = false;
   micBtn.addEventListener('click', () => {
     if (recog) recog.stop();
