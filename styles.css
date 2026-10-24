@@ -118,6 +118,15 @@ select, input[type="password"], input[type="text"] {
 .mic[aria-pressed="true"] svg { animation: mic-pulse 1.2s ease-in-out infinite; }
 @keyframes mic-pulse { 50% { opacity: .35; } }
 @media (prefers-reduced-motion: reduce) { .mic[aria-pressed="true"] svg { animation: none; } }
+.thumbs { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.thumbs:empty { display: none; }
+.thumbs li { position: relative; }
+.thumbs img { display: block; width: 84px; height: 84px; object-fit: cover; border-radius: 8px; border: 1px solid var(--line); background: #fff; }
+.thumbs button {
+  position: absolute; top: -6px; right: -6px; width: 22px; height: 22px; border-radius: 50%;
+  border: 1px solid var(--line); background: var(--panel); cursor: pointer; line-height: 1; padding: 0; font-size: 14px;
+}
+label.mic { user-select: none; }
 .errors { list-style: none; margin: 0; padding: 0; font-size: 13px; max-height: 30%; overflow: auto; }
 .errors li { color: var(--error); padding: 4px 0; cursor: pointer; }
 .errors li.ok { color: var(--muted); cursor: default; }

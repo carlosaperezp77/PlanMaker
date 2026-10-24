@@ -33,6 +33,8 @@ cota z en x,y               (cota suelta interior)
 curvas cada <intervalo>
 construccion <Nombre> <ancho>x<fondo> en x,y
 
+IMÁGENES: si el usuario adjunta imágenes (foto o escaneo de un plano, un croquis a mano, una foto de una pieza o de un terreno), úsalas como fuente principal: identifica el tipo de proyecto, lee las cotas y los nombres que se vean, respeta las proporciones y la distribución, y ubica puertas y ventanas donde aparecen. Si la imagen no tiene medidas, estímalas con proporciones realistas (una puerta mide unos 0.9 m) y dilo en un comentario # al inicio. El texto del usuario, si lo hay, manda sobre la imagen.
+
 Elige medidas realistas cuando el usuario no las dé, y verifica que las habitaciones no se superpongan y que puertas y ventanas quepan en su muro.`;
 
 let sdkPromise = null;
@@ -51,10 +53,15 @@ function clean(text) {
  * Convierte la descripción. Si la página corre dentro de claude.ai y hay
  * `sample` (Claude sin clave propia), lo usa; si no, llama a la API con la clave.
  */
-export async function describeToInstructions({ apiKey, description, current, sample }) {
-  const content = userContent(description, current);
+export async function describeToInstructions({ apiKey, description, current, sample, images = [] }) {
+  const content = userContent(
+    description || 'Dibuja el plano que muestran las imágenes adjuntas.',
+    current,
+  ) + (images.length ? `\n\n(${images.length > 1 ? `${images.length} imágenes adjuntas` : '1 imagen adjunta'}.)` : '');
   if (sample) {
-    const { text } = await sample(`${SYSTEM}\n\n---\n\n${content}`, { modelTier: 'default' });
+    const opts = { modelTier: 'default' };
+    if (images.length) opts.images = images.map((i) => i.blob);
+    const { text } = await sample(`${SYSTEM}\n\n---\n\n${content}`, opts);
     const out = clean(text || '');
     if (!out) throw new Error('La respuesta llegó vacía.');
     return out;
@@ -70,7 +77,16 @@ export async function describeToInstructions({ apiKey, description, current, sam
     betas: ['server-side-fallback-2026-07-01'],
     fallbacks: 'default',
     system: SYSTEM,
-    messages: [{ role: 'user', content }],
+    messages: [{
+      role: 'user',
+      content: [
+        ...images.map((i) => ({
+          type: 'image',
+          source: { type: 'base64', media_type: i.type, data: i.base64 },
+        })),
+        { type: 'text', text: content },
+      ],
+    }],
   });
   if (response.stop_reason === 'refusal') {
     throw new Error('El modelo no pudo atender esta descripción. Prueba a reformularla.');
@@ -81,4 +97,28 @@ export async function describeToInstructions({ apiKey, description, current, sam
     .join('\n'));
   if (!text) throw new Error('La respuesta llegó vacía.');
   return text;
+}
+
+/**
+ * Prepara una imagen para enviarla: la reduce a 1568 px por lado como máximo
+ * (lo que el modelo aprovecha) y la pasa a JPEG. Devuelve el blob, su tipo,
+ * su base64 y una URL para la miniatura.
+ */
+export async function prepareImage(file, maxSide = 1568) {
+  const bmp = await createImageBitmap(file);
+  const k = Math.min(1, maxSide / Math.max(bmp.width, bmp.height));
+  const w = Math.round(bmp.width * k), h = Math.round(bmp.height * k);
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#fff'; // fondo blanco para PNG con transparencia
+  ctx.fillRect(0, 0, w, h);
+  ctx.drawImage(bmp, 0, 0, w, h);
+  bmp.close?.();
+  const blob = await new Promise((res, rej) => canvas.toBlob((b) => (b ? res(b) : rej(new Error('No se pudo leer la imagen.'))), 'image/jpeg', 0.88));
+  const buf = new Uint8Array(await blob.arrayBuffer());
+  let bin = '';
+  for (let i = 0; i < buf.length; i += 0x8000) bin += String.fromCharCode(...buf.subarray(i, i + 0x8000));
+  return { blob, type: 'image/jpeg', base64: btoa(bin), url: URL.createObjectURL(blob), name: file.name };
 }

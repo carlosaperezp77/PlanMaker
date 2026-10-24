@@ -3,7 +3,7 @@
 import { parse } from './parser.js';
 import { buildDocument, drawable, renderSheet, renderView } from './render.js';
 import { EXAMPLES } from './examples.js';
-import { describeToInstructions } from './ai.js';
+import { describeToInstructions, prepareImage } from './ai.js';
 import { mount3d } from './render3d.js';
 import { svgToDxf, dxfBytes } from './dxf.js';
 
@@ -21,6 +21,7 @@ const store = {
 
 // Dentro de claude.ai (artifact) las descargas y la IA pasan por el visor.
 const host = { downloads: null, sample: null };
+let imageLimits = { maxCount: 4 }; // sin visor: la API acepta varias imágenes
 if (window.claude?.use) {
   $('print').hidden = true; // el visor no permite abrir el diálogo de impresión
   window.claude.use('downloads').then((d) => { host.downloads = d; }).catch(() => {});
@@ -29,6 +30,11 @@ if (window.claude?.use) {
     if (s) {
       $('ai-key').closest('label').hidden = true;
       $('ai-key-note').hidden = true;
+      s.limits?.().then((caps) => {
+        imageLimits = caps?.images || null;
+        $('ai-img-btn').hidden = !imageLimits;
+        if (imageLimits) $('ai-img').accept = imageLimits.mediaTypes.join(',');
+      }).catch(() => { $('ai-img-btn').hidden = true; });
     }
   }).catch(() => {});
 }
@@ -337,19 +343,20 @@ $('ai-go').addEventListener('click', async () => {
   if (recog) recog.stop();
   const description = $('ai-text').value.trim();
   const status = $('ai-status');
-  if (!description) {
-    status.textContent = 'Escribe primero una descripción.';
+  if (!description && !aiImages.length) {
+    status.textContent = 'Escribe una descripción o sube una imagen.';
     return;
   }
   const btn = $('ai-go');
   btn.disabled = true;
-  status.textContent = 'Generando instrucciones…';
+  status.textContent = aiImages.length ? 'Leyendo la imagen y generando instrucciones…' : 'Generando instrucciones…';
   try {
     const text = await describeToInstructions({
       apiKey: aiKey.value.trim(),
       description,
       current: $('ai-keep').checked ? src.value : '',
       sample: host.sample,
+      images: aiImages,
     });
     src.value = text;
     current = -1;
@@ -361,6 +368,57 @@ $('ai-go').addEventListener('click', async () => {
   } finally {
     btn.disabled = false;
   }
+});
+
+// ------------------------------------------------- Imágenes adjuntas
+
+let aiImages = [];
+const thumbs = $('ai-thumbs');
+if (!window.claude?.use) $('ai-img-btn').hidden = false;
+
+function renderThumbs() {
+  thumbs.replaceChildren(...aiImages.map((img, i) => {
+    const li = document.createElement('li');
+    const im = document.createElement('img');
+    im.src = img.url;
+    im.alt = img.name || `Imagen ${i + 1}`;
+    const rm = document.createElement('button');
+    rm.type = 'button';
+    rm.textContent = '×';
+    rm.title = 'Quitar imagen';
+    rm.setAttribute('aria-label', `Quitar ${im.alt}`);
+    rm.addEventListener('click', () => {
+      URL.revokeObjectURL(img.url);
+      aiImages.splice(i, 1);
+      renderThumbs();
+    });
+    li.append(im, rm);
+    return li;
+  }));
+}
+
+$('ai-img').addEventListener('change', async (e) => {
+  const status = $('ai-status');
+  const max = imageLimits?.maxCount || 1;
+  const files = [...e.target.files];
+  e.target.value = '';
+  for (const f of files) {
+    if (aiImages.length >= max) {
+      status.textContent = `Puedes adjuntar hasta ${max} ${max > 1 ? 'imágenes' : 'imagen'}.`;
+      break;
+    }
+    if (imageLimits?.maxInputBytes && f.size > imageLimits.maxInputBytes) {
+      status.textContent = `"${f.name}" es demasiado grande.`;
+      continue;
+    }
+    try {
+      aiImages.push(await prepareImage(f));
+      status.textContent = '';
+    } catch {
+      status.textContent = `No se pudo abrir "${f.name}". Prueba con una foto JPG o PNG.`;
+    }
+  }
+  renderThumbs();
 });
 
 // --------------------------------------------------- Dictado por voz
