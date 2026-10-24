@@ -195,6 +195,17 @@ label.mic { user-select: none; }
 
 .stage3d { flex: 1; min-height: 0; position: relative; background: var(--stage); touch-action: none; }
 .stage3d canvas { display: block; }
+.r3d-bar {
+  position: absolute; top: 10px; left: 10px; right: 10px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+  pointer-events: none;
+}
+.r3d-bar > * { pointer-events: auto; }
+.r3d-bar button, .r3d-bar select {
+  border: 1px solid var(--line); background: var(--panel); color: var(--ink);
+  border-radius: 999px; padding: 4px 11px; font-size: 13px; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,.12);
+}
+.r3d-bar button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.r3d-bar .sep { width: 4px; }
 .stage3d[data-loading]::after {
   content: attr(data-loading);
   position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted);

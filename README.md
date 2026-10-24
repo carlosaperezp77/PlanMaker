@@ -18,7 +18,11 @@ y la lámina A3 incluye marco, cajetín y notas (área útil, volumen, desnivel�
 Además, la pestaña **Render 3D** muestra el modelo con luz y sombras para
 girarlo y acercarlo con el ratón o los dedos: la casa con sus muros, vanos,
 losas y cubierta; la pieza con sus agujeros y ranuras; el terreno como maqueta
-con su relieve y construcciones. Usa three.js, que se carga desde CDN solo al
+con su relieve y construcciones. En los edificios cada recinto se amuebla
+según su nombre (camas, sofás, comedor, cocina, baños…), con pisos de madera o
+cerámica, césped, palmeras, y terrazas y piscinas si se indican. Se puede ver
+**sin techo**, como maqueta (piso por piso), o **con techo**, y el PNG se
+exporta al doble de resolución. Usa three.js, que se carga desde CDN solo al
 abrir esa pestaña.
 
 ## Uso

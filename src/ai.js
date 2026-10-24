@@ -17,6 +17,10 @@ piso N                                           (las habitaciones siguientes va
 puerta <Habitación> <norte|sur|este|oeste> [ancho] [a distancia desde el inicio del muro]
 ventana <Habitación> <lado> [ancho] [a distancia] [antepecho H] [alto H]
 Las distancias "a" se miden desde el extremo oeste (muros norte/sur) o sur (muros este/oeste).
+terraza <ancho>x<fondo> en x,y                   (deck exterior de madera a nivel del suelo)
+piscina <ancho>x<fondo> en x,y [prof P]           (va dentro de una terraza o en el jardín)
+sin muebles                                      (por defecto el render 3D amuebla según el nombre: dormitorio, sala, comedor, cocina, baño, estudio, lavandería, garaje)
+Usa nombres de recinto claros (Sala, Comedor, Cocina, Dormitorio principal, Baño…) para que el render los amueble bien.
 
 PIEZA (milímetros):
 material <texto>
