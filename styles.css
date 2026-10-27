@@ -118,6 +118,7 @@ select, input[type="password"], input[type="text"] {
 .mic[aria-pressed="true"] svg { animation: mic-pulse 1.2s ease-in-out infinite; }
 @keyframes mic-pulse { 50% { opacity: .35; } }
 @media (prefers-reduced-motion: reduce) { .mic[aria-pressed="true"] svg { animation: none; } }
+.editor.dropping { outline: 3px dashed var(--accent); outline-offset: -6px; }
 .thumbs { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
 .thumbs:empty { display: none; }
 .thumbs li { position: relative; }

@@ -397,11 +397,13 @@ function renderThumbs() {
   }));
 }
 
-$('ai-img').addEventListener('change', async (e) => {
+async function addImageFiles(files) {
   const status = $('ai-status');
+  if ($('ai-img-btn').hidden) {
+    status.textContent = 'Esta vista no permite enviar imágenes a Claude.';
+    return;
+  }
   const max = imageLimits?.maxCount || 1;
-  const files = [...e.target.files];
-  e.target.value = '';
   for (const f of files) {
     if (aiImages.length >= max) {
       status.textContent = `Puedes adjuntar hasta ${max} ${max > 1 ? 'imágenes' : 'imagen'}.`;
@@ -413,12 +415,48 @@ $('ai-img').addEventListener('change', async (e) => {
     }
     try {
       aiImages.push(await prepareImage(f));
-      status.textContent = '';
+      status.textContent = 'Imagen lista. Agrega detalles si quieres y pulsa Generar instrucciones.';
     } catch {
-      status.textContent = `No se pudo abrir "${f.name}". Prueba con una foto JPG o PNG.`;
+      status.textContent = `No se pudo abrir "${f.name || 'la imagen'}". Prueba con una foto JPG o PNG.`;
     }
   }
   renderThumbs();
+}
+
+$('ai-img').addEventListener('change', (e) => {
+  const files = [...e.target.files];
+  e.target.value = '';
+  addImageFiles(files);
+});
+
+const imagesIn = (list) => [...(list || [])].filter((f) => f.type?.startsWith('image/'));
+const showAiTab = () => document.querySelector('.tabs button[data-tab="ai"]').click();
+
+// Pegar una imagen (Ctrl+V / Cmd+V) en cualquier parte la adjunta a "Describir con IA".
+document.addEventListener('paste', (e) => {
+  const files = imagesIn([...(e.clipboardData?.items || [])].filter((it) => it.kind === 'file').map((it) => it.getAsFile()));
+  if (!files.length) return;
+  e.preventDefault();
+  showAiTab();
+  addImageFiles(files);
+});
+
+// Arrastrar y soltar imágenes sobre el panel de la izquierda.
+const editor = document.querySelector('.editor');
+editor.addEventListener('dragover', (e) => {
+  if ([...(e.dataTransfer?.items || [])].some((it) => it.kind === 'file')) {
+    e.preventDefault();
+    editor.classList.add('dropping');
+  }
+});
+editor.addEventListener('dragleave', (e) => { if (!editor.contains(e.relatedTarget)) editor.classList.remove('dropping'); });
+editor.addEventListener('drop', (e) => {
+  editor.classList.remove('dropping');
+  const files = imagesIn(e.dataTransfer?.files);
+  if (!files.length) return;
+  e.preventDefault();
+  showAiTab();
+  addImageFiles(files);
 });
 
 // --------------------------------------------------- Dictado por voz
