@@ -42,7 +42,7 @@ se descarga como PNG.
 La pestaña **Describir con IA** convierte una descripción libre ("una casa de
 un piso con tres dormitorios…") en instrucciones usando la API de Claude, con
 la clave de API de quien la usa (se guarda solo en su navegador). El botón
-**Imagen** permite subir (o pegar con Ctrl+V, o arrastrar) una foto o escaneo de un plano, un croquis a mano o la
+**Subir imagen** permite subir (o pegar con Ctrl+V, o arrastrar) una foto o escaneo de un plano, y **Foto** la toma con la cámara (la del teléfono, o la cámara web en una computadora), un croquis a mano o la
 foto de una pieza, y Claude lo convierte en instrucciones. El botón
 **Dictar** permite describirlo hablando, con el reconocimiento de voz del
 navegador (Chrome, Edge o Safari; pide permiso para el micrófono la primera vez).

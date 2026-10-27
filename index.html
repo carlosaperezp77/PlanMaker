@@ -41,8 +41,13 @@
           </button>
           <label id="ai-img-btn" class="mic" hidden>
             <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 7h3l2-2h6l2 2h3v12H4z M12 10a3.5 3.5 0 1 0 0 7a3.5 3.5 0 0 0 0-7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
-            <span>Imagen</span>
+            <span>Subir imagen</span>
             <input id="ai-img" type="file" accept="image/*" multiple hidden>
+          </label>
+          <label id="ai-cam-btn" class="mic" hidden>
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 7h3l2-2h6l2 2h3v12H4z M12 10a3.5 3.5 0 1 0 0 7a3.5 3.5 0 0 0 0-7z" fill="currentColor" fill-opacity=".18" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+            <span>Foto</span>
+            <input id="ai-cam" type="file" accept="image/*" capture="environment" hidden>
           </label>
           <span id="ai-mic-status" class="hint small" aria-live="polite"></span>
         </div>
@@ -114,6 +119,14 @@ construccion Casa 10x8 en 10,6</pre>
       <div id="stage3d" class="stage3d" hidden></div>
     </section>
   </main>
+
+  <dialog id="cam-dialog" class="cam-dialog" aria-label="Tomar foto">
+    <video id="cam-video" autoplay playsinline muted></video>
+    <div class="cam-actions">
+      <button id="cam-cancel" type="button">Cancelar</button>
+      <button id="cam-shot" type="button" class="primary">Tomar foto</button>
+    </div>
+  </dialog>
 
   <div id="print-area" aria-hidden="true"></div>
   <script type="module" src="src/app.js"></script>

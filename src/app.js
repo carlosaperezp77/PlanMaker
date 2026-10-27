@@ -33,8 +33,9 @@ if (window.claude?.use) {
       s.limits?.().then((caps) => {
         imageLimits = caps?.images || null;
         $('ai-img-btn').hidden = !imageLimits;
+        $('ai-cam-btn').hidden = !imageLimits;
         if (imageLimits) $('ai-img').accept = imageLimits.mediaTypes.join(',');
-      }).catch(() => { $('ai-img-btn').hidden = true; });
+      }).catch(() => { $('ai-img-btn').hidden = true; $('ai-cam-btn').hidden = true; });
     }
   }).catch(() => {});
 }
@@ -374,7 +375,7 @@ $('ai-go').addEventListener('click', async () => {
 
 let aiImages = [];
 const thumbs = $('ai-thumbs');
-if (!window.claude?.use) $('ai-img-btn').hidden = false;
+if (!window.claude?.use) $('ai-img-btn').hidden = $('ai-cam-btn').hidden = false;
 
 function renderThumbs() {
   thumbs.replaceChildren(...aiImages.map((img, i) => {
@@ -427,6 +428,60 @@ $('ai-img').addEventListener('change', (e) => {
   const files = [...e.target.files];
   e.target.value = '';
   addImageFiles(files);
+});
+
+// ------------------------------------------------------- Tomar foto
+// En el teléfono, el campo con capture="environment" abre la cámara trasera.
+// En una computadora se usa la cámara web en un diálogo; si no hay acceso,
+// se avisa y se puede subir o pegar la imagen.
+
+const isTouch = window.matchMedia?.('(pointer: coarse)').matches;
+const camInput = $('ai-cam');
+const camDialog = $('cam-dialog');
+const camVideo = $('cam-video');
+let camStream = null;
+
+camInput.addEventListener('change', (e) => {
+  const files = [...e.target.files];
+  e.target.value = '';
+  addImageFiles(files);
+});
+
+function stopCamera() {
+  camStream?.getTracks().forEach((t) => t.stop());
+  camStream = null;
+  camVideo.srcObject = null;
+  if (camDialog.open) camDialog.close();
+}
+
+$('ai-cam-btn').addEventListener('click', async (e) => {
+  if (isTouch || !navigator.mediaDevices?.getUserMedia || !camDialog.showModal) return; // abre la cámara del teléfono
+  e.preventDefault();
+  const status = $('ai-status');
+  try {
+    camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1920 } }, audio: false });
+    camVideo.srcObject = camStream;
+    camDialog.showModal();
+  } catch (err) {
+    stopCamera();
+    status.textContent = err?.name === 'NotFoundError'
+      ? 'No se encontró ninguna cámara. Usa "Subir imagen" o pega una captura con Ctrl+V.'
+      : 'No hay permiso para usar la cámara aquí. Usa "Subir imagen" o pega una captura con Ctrl+V.';
+  }
+});
+
+$('cam-cancel').addEventListener('click', stopCamera);
+camDialog.addEventListener('close', stopCamera);
+$('cam-shot').addEventListener('click', async () => {
+  const w = camVideo.videoWidth, h = camVideo.videoHeight;
+  if (!w || !h) return;
+  const c = document.createElement('canvas');
+  c.width = w;
+  c.height = h;
+  c.getContext('2d').drawImage(camVideo, 0, 0, w, h);
+  const blob = await new Promise((ok) => c.toBlob(ok, 'image/jpeg', 0.92));
+  stopCamera();
+  if (blob) addImageFiles([new File([blob], 'foto.jpg', { type: 'image/jpeg' })]);
 });
 
 const imagesIn = (list) => [...(list || [])].filter((f) => f.type?.startsWith('image/'));
