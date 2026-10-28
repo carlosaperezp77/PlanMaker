@@ -33,7 +33,9 @@ npm test           # pruebas
 npm run build      # dist/planmaker.html, un único archivo que se abre sin servidor
 ```
 
-Escribe las instrucciones a la izquierda; el plano se actualiza al instante. Cada
+**+ Nuevo plano** borra todo y empieza con una plantilla mínima de edificio,
+pieza mecánica o terreno. Escribe las instrucciones a la izquierda; el plano se
+actualiza al instante. Cada
 vista puede verse sola y exportarse como **SVG**, **PNG**, **DXF** (AutoCAD y
 otros CAD, con una capa por tipo de línea, en mm de papel a la escala de la
 lámina) o **PDF** (Imprimir → Guardar como PDF, en A3 horizontal). El render 3D

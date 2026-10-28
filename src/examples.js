@@ -144,3 +144,29 @@ agujero 10 pasante en 50,85
 agujero 10 pasante en 50,15`,
   },
 ];
+
+// Plantillas mínimas para «Nuevo plano».
+export const STARTERS = {
+  edificio: `casa Mi proyecto
+pisos 1
+altura 2.6
+muro 0.15
+
+# Escribe tus espacios: habitacion Nombre anchoxlargo en x,y
+habitacion Sala 4x4 en 0,0
+`,
+  pieza: `pieza Mi pieza
+material Acero
+
+# Medidas en mm: bloque largoxanchoxalto
+bloque 100x50x10
+`,
+  terreno: `terreno Mi lote
+
+# Vértices en orden, con su cota (m)
+punto 0,0 cota 100
+punto 20,0 cota 100
+punto 20,30 cota 101
+punto 0,30 cota 101
+`,
+};

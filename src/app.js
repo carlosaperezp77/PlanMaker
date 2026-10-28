@@ -2,7 +2,7 @@
 
 import { parse } from './parser.js';
 import { buildDocument, drawable, renderSheet, renderView } from './render.js';
-import { EXAMPLES } from './examples.js';
+import { EXAMPLES, STARTERS } from './examples.js';
 import { describeToInstructions, prepareImage } from './ai.js';
 import { mount3d } from './render3d.js';
 import { svgToDxf, dxfBytes } from './dxf.js';
@@ -63,6 +63,31 @@ $('examples').addEventListener('change', (e) => {
   current = -1;
   update(true);
 });
+
+// ------------------------------------------------------- Nuevo plano
+
+const newDialog = $('new-dialog');
+$('new-plan').addEventListener('click', () => newDialog.showModal());
+$('new-cancel').addEventListener('click', () => newDialog.close());
+newDialog.querySelectorAll('[data-new]').forEach((b) => b.addEventListener('click', () => {
+  newDialog.close();
+  src.value = STARTERS[b.dataset.new];
+  $('ai-text').value = '';
+  aiImages = [];
+  renderThumbs();
+  if (!$('examples').querySelector('option[value=""]')) {
+    const o = document.createElement('option');
+    o.value = '';
+    o.textContent = '(tus instrucciones)';
+    $('examples').prepend(o);
+  }
+  $('examples').value = '';
+  current = -1;
+  update(true);
+  document.querySelector('.tabs button[data-tab="text"]').click();
+  src.focus();
+  src.setSelectionRange(src.value.length, src.value.length);
+}));
 
 // ---------------------------------------------------------- Pestañas
 

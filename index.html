@@ -13,10 +13,24 @@
       <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 3h18v18H3z M3 12h9 M12 3v18 M12 16h9" fill="none" stroke="currentColor" stroke-width="2"/></svg>
       <span>PlanMaker</span>
     </div>
-    <label class="examples">Ejemplo
-      <select id="examples"></select>
-    </label>
+    <div class="top-actions">
+      <button id="new-plan" type="button" class="primary">+ Nuevo plano</button>
+      <label class="examples">Ejemplo
+        <select id="examples"></select>
+      </label>
+    </div>
   </header>
+
+  <dialog id="new-dialog" class="new-dialog" aria-labelledby="new-title">
+    <h2 id="new-title">Nuevo plano</h2>
+    <p>¿Qué quieres dibujar? Se borran las instrucciones actuales.</p>
+    <div class="new-choices">
+      <button type="button" data-new="edificio"><strong>Edificio</strong><span>Casa, local u oficina</span></button>
+      <button type="button" data-new="pieza"><strong>Pieza mecánica</strong><span>Medidas en mm</span></button>
+      <button type="button" data-new="terreno"><strong>Terreno</strong><span>Lote con cotas</span></button>
+    </div>
+    <div class="new-foot"><button id="new-cancel" type="button">Cancelar</button></div>
+  </dialog>
 
   <main class="layout">
     <section class="editor" aria-label="Instrucciones">
