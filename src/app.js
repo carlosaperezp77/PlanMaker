@@ -32,10 +32,8 @@ if (window.claude?.use) {
       $('ai-key-note').hidden = true;
       s.limits?.().then((caps) => {
         imageLimits = caps?.images || null;
-        $('ai-img-btn').hidden = !imageLimits;
-        $('ai-cam-btn').hidden = !imageLimits;
         if (imageLimits) $('ai-img').accept = imageLimits.mediaTypes.join(',');
-      }).catch(() => { $('ai-img-btn').hidden = true; $('ai-cam-btn').hidden = true; });
+      }).catch(() => { imageLimits = null; });
     }
   }).catch(() => {});
 }
@@ -400,7 +398,17 @@ $('ai-go').addEventListener('click', async () => {
 
 let aiImages = [];
 const thumbs = $('ai-thumbs');
-if (!window.claude?.use) $('ai-img-btn').hidden = $('ai-cam-btn').hidden = false;
+$('ai-img-btn').hidden = $('ai-cam-btn').hidden = false;
+const NO_IMAGES = 'Esta vista de claude.ai no deja enviar imágenes a Claude. Ábrela desde claude.ai en el navegador de tu computadora o escribe la descripción.';
+// Si el visor no acepta imágenes, los botones avisan en vez de abrir la cámara o el selector.
+for (const id of ['ai-img-btn', 'ai-cam-btn']) {
+  $(id).addEventListener('click', (e) => {
+    if (imageLimits) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    $('ai-status').textContent = NO_IMAGES;
+  }, true);
+}
 
 function renderThumbs() {
   thumbs.replaceChildren(...aiImages.map((img, i) => {
@@ -425,8 +433,8 @@ function renderThumbs() {
 
 async function addImageFiles(files) {
   const status = $('ai-status');
-  if ($('ai-img-btn').hidden) {
-    status.textContent = 'Esta vista no permite enviar imágenes a Claude.';
+  if (!imageLimits) {
+    status.textContent = NO_IMAGES;
     return;
   }
   const max = imageLimits?.maxCount || 1;
