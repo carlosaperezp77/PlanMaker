@@ -299,7 +299,20 @@ function fileName(ext) {
   return `${base}_${part}.${ext}`;
 }
 
+// En la app de Android, guardar e imprimir pasan por el puente nativo.
+const android = window.PlanMakerAndroid;
+
 async function download(blob, name) {
+  if (android) {
+    const b64 = await new Promise((ok, fail) => {
+      const r = new FileReader();
+      r.onload = () => ok(String(r.result).split(',')[1]);
+      r.onerror = fail;
+      r.readAsDataURL(blob);
+    });
+    android.save(name, blob.type, b64);
+    return;
+  }
   if (host.downloads) {
     try {
       await host.downloads.save({ filename: name, data: blob });
@@ -354,7 +367,8 @@ $('dl-png').addEventListener('click', async () => {
 $('print').addEventListener('click', () => {
   if (!svgText) return;
   $('print-area').innerHTML = svgText;
-  window.print();
+  if (android) setTimeout(() => android.print(fileName('pdf').replace(/\.pdf$/, '')), 50);
+  else window.print();
 });
 
 // ------------------------------------------------------- Asistente IA

@@ -53,6 +53,16 @@ página; ahí el botón pone el cursor en el cuadro e indica cómo usar el dicta
 del sistema (Windows + H, Fn dos veces en Mac o el micrófono del teclado del
 teléfono), y la IA funciona sin clave.
 
+## App de Android
+
+`android/` envuelve la app web en un WebView. GitHub Actions genera
+`PlanMaker.apk` en cada cambio (artefacto del flujo «App de Android») y la
+publica junto a la página: https://carlosaperezp77.github.io/PlanMaker/PlanMaker.apk .
+Para compilar en local: `npm run build` y luego `gradle assembleDebug` en
+`android/` (requiere el SDK de Android). En la app, «Foto» abre la cámara, los
+archivos se guardan con el selector de Android e Imprimir usa el servicio de
+impresión del teléfono. Describir con IA necesita una clave API de Anthropic.
+
 ## Instrucciones
 
 Una orden por línea; `#` para comentarios. Coordenadas `x,y` con x hacia el este
