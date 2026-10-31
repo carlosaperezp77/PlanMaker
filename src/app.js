@@ -503,6 +503,11 @@ function stopCamera() {
 
 $('ai-cam-btn').addEventListener('click', async (e) => {
   if (isTouch || !navigator.mediaDevices?.getUserMedia || !camDialog.showModal) return; // abre la cámara del teléfono
+  if (window.claude?.use) {
+    // La vista previa de claude.ai no da acceso a la cámara web: se abre el selector de archivos.
+    $('ai-status').textContent = 'En la computadora, la vista previa de claude.ai no puede usar la cámara web. Elige una foto guardada, o usa Foto desde el teléfono.';
+    return;
+  }
   e.preventDefault();
   const status = $('ai-status');
   try {
