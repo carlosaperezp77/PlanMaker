@@ -50,6 +50,45 @@ ventana Dormitorio 3 norte 2
 ventana Baño norte 0.6 antepecho 1.6 alto 0.5`,
   },
   {
+    id: 'villa',
+    label: 'Casa con terraza y piscina',
+    text: `casa Villa del Sol
+altura 2.8
+muro 0.2
+techo dos aguas altura 1.6
+
+habitacion Dormitorio 2 4x5 en 0,0
+habitacion Sala comedor 7x5 en 4,0
+habitacion Dormitorio principal 4.5x5 en 11,0
+habitacion Baño 2.5x4 en 0,5
+habitacion Cocina 4x4 en 2.5,5
+habitacion Estudio 4.5x4 en 6.5,5
+habitacion Baño principal 2.5x4 en 11,5
+habitacion Vestidor 2x4 en 13.5,5
+
+puerta Sala comedor sur 1 a 3
+ventanal Sala comedor sur 2.4 a 4.3
+ventana Sala comedor sur 1.2 a 0.8
+puerta Dormitorio 2 este 0.9 a 3.8
+ventana Dormitorio 2 sur 1.5
+ventana Dormitorio 2 oeste 1.2
+puerta Baño sur 0.8 a 1.5
+ventana Baño norte 0.6 antepecho 1.6 alto 0.5
+puerta Cocina sur 0.9 a 2.5
+ventana Cocina norte 1.5
+puerta Estudio sur 0.9 a 1
+ventana Estudio norte 1.5
+puerta Dormitorio principal oeste 0.9 a 3.8
+ventanal Dormitorio principal este 2 a 1.5
+ventana Dormitorio principal sur 1.5
+puerta Baño principal sur 0.8 a 0.5
+ventana Baño principal norte 0.6 antepecho 1.6 alto 0.5
+puerta Vestidor sur 0.8 a 0.6
+
+terraza 9x9 en 15.5,0
+piscina 6x3 en 17,4.5`,
+  },
+  {
     id: 'pieza',
     label: 'Soporte mecánico',
     text: `pieza Soporte de rodamiento
@@ -105,3 +144,29 @@ agujero 10 pasante en 50,85
 agujero 10 pasante en 50,15`,
   },
 ];
+
+// Plantillas mínimas para «Nuevo plano».
+export const STARTERS = {
+  edificio: `casa Mi proyecto
+pisos 1
+altura 2.6
+muro 0.15
+
+# Escribe tus espacios: habitacion Nombre anchoxlargo en x,y
+habitacion Sala 4x4 en 0,0
+`,
+  pieza: `pieza Mi pieza
+material Acero
+
+# Medidas en mm: bloque largoxanchoxalto
+bloque 100x50x10
+`,
+  terreno: `terreno Mi lote
+
+# Vértices en orden, con su cota (m)
+punto 0,0 cota 100
+punto 20,0 cota 100
+punto 20,30 cota 101
+punto 0,30 cota 101
+`,
+};

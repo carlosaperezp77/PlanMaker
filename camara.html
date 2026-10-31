@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PlanMaker · Cámara</title>
+<style>
+  :root { --accent: #1d4f91; --ink: #1b1f24; --muted: #5b6470; --bg: #f4f5f7; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--ink); }
+  main { max-width: 760px; margin: 0 auto; padding: 16px; display: grid; gap: 12px; }
+  h1 { margin: 0; font-size: 18px; color: var(--accent); }
+  video, img { width: 100%; max-height: 70vh; border-radius: 10px; background: #000; display: block; object-fit: contain; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; }
+  button { font: inherit; border: 1px solid #c9ced6; background: #fff; border-radius: 8px; padding: 10px 16px; cursor: pointer; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  #msg { margin: 0; color: var(--muted); }
+  #msg.ok { color: #1a7f37; font-weight: 600; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Tomar foto para PlanMaker</h1>
+  <p id="msg">Permite el uso de la cámara cuando el navegador lo pregunte.</p>
+  <video id="video" autoplay playsinline muted></video>
+  <img id="shot" alt="Foto tomada" hidden>
+  <div class="row">
+    <button id="take" class="primary" disabled>Tomar foto</button>
+    <button id="again" hidden>Tomar otra</button>
+    <button id="save" hidden>Descargar foto</button>
+  </div>
+</main>
+<script>
+// Página auxiliar: la vista previa de claude.ai no puede usar la cámara de la
+// computadora, así que la abre aquí. La foto vuelve a PlanMaker por mensaje
+// (si la ventana sigue conectada) y además queda copiada para pegar con Ctrl+V.
+const $ = (id) => document.getElementById(id);
+const msg = (t, ok) => { $('msg').textContent = t; $('msg').className = ok ? 'ok' : ''; };
+let stream = null;
+let blob = null;
+
+async function start() {
+  if (window.origin === 'null') {
+    msg('Esta ventana quedó limitada por claude.ai. Copia esta dirección en una pestaña nueva: ' + location.href);
+    return;
+  }
+  $('shot').hidden = true; $('video').hidden = false;
+  $('again').hidden = true; $('save').hidden = true;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 1920 } }, audio: false });
+    $('video').srcObject = stream;
+    $('video').onloadedmetadata = () => {
+      $('take').disabled = false;
+      msg('Cuando estés listo, pulsa Tomar foto.');
+    };
+  } catch (err) {
+    msg(err && err.name === 'NotFoundError'
+      ? 'No se encontró ninguna cámara en esta computadora.'
+      : 'El navegador bloqueó la cámara. Pulsa el ícono de cámara o candado junto a la dirección, elige Permitir y recarga esta página.');
+  }
+}
+
+function stop() {
+  if (stream) stream.getTracks().forEach((t) => t.stop());
+  stream = null;
+}
+
+$('take').addEventListener('click', async () => {
+  const v = $('video');
+  if (!v.videoWidth) return;
+  const c = document.createElement('canvas');
+  c.width = v.videoWidth; c.height = v.videoHeight;
+  c.getContext('2d').drawImage(v, 0, 0);
+  blob = await new Promise((ok) => c.toBlob(ok, 'image/jpeg', 0.92));
+  stop();
+  $('shot').src = URL.createObjectURL(blob);
+  $('shot').hidden = false; $('video').hidden = true;
+  $('take').disabled = true; $('again').hidden = false; $('save').hidden = false;
+  let sent = false;
+  try {
+    if (window.opener) { window.opener.postMessage({ type: 'planmaker-photo', blob }, '*'); sent = true; }
+  } catch { /* ventana desconectada */ }
+  if (sent) msg('Foto enviada a PlanMaker. Puedes cerrar esta ventana; si no aparece allá, pulsa Ctrl+V en PlanMaker.', true);
+  // Copia también al portapapeles, por si la ventana no quedó conectada.
+  let copied = false;
+  try {
+    const png = new Promise((ok) => c.toBlob(ok, 'image/png'));
+    await Promise.race([
+      navigator.clipboard.write([new ClipboardItem({ 'image/png': png })]),
+      new Promise((_, no) => setTimeout(no, 3000)),
+    ]);
+    copied = true;
+  } catch { /* sin portapapeles */ }
+  if (sent) return;
+  if (copied) msg('Foto copiada. Vuelve a PlanMaker y pulsa Ctrl+V.', true);
+  else msg('Descarga la foto y súbela en PlanMaker con Subir imagen.');
+});
+$('again').addEventListener('click', start);
+$('save').addEventListener('click', () => {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = 'foto.jpg'; a.click();
+});
+window.addEventListener('pagehide', stop);
+start();
+</script>
+</body>
+</html>

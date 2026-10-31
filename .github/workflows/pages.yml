@@ -22,7 +22,17 @@ jobs:
         with:
           node-version: 22
       - run: npm run build
-      - run: mkdir -p site && cp dist/planmaker.html site/index.html
+      - run: mkdir -p site && cp dist/planmaker.html site/index.html && cp camara.html site/camara.html
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - run: gradle assembleDebug --no-daemon
+        working-directory: android
+      - run: cp android/app/build/outputs/apk/debug/app-debug.apk site/PlanMaker.apk
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

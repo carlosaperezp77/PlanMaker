@@ -9,7 +9,7 @@ const read = (p) => readFileSync(new URL(p, root), 'utf8');
 const order = [
   'src/util.js', 'src/svg.js', 'src/parser.js',
   'src/views/edificio.js', 'src/views/pieza.js', 'src/views/terreno.js',
-  'src/render.js', 'src/examples.js', 'src/ai.js', 'src/render3d.js', 'src/dxf.js', 'src/app.js',
+  'src/render.js', 'src/examples.js', 'src/ai.js', 'src/furniture.js', 'src/render3d.js', 'src/dxf.js', 'src/app.js',
 ];
 
 function wrap(file) {

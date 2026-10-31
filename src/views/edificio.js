@@ -55,12 +55,30 @@ function planView(m, piso, title, cut) {
   const openings = openingsOf(m, piso);
   const t = m.muro;
   const b = box(rooms, t);
+  const ext = piso === 1 ? m.exteriores || [] : [];
+  const all = ext.length ? box([...rooms, ...ext.map((e) => ({ x: e.x, y: e.y, w: e.w, d: e.d }))], t) : b;
   return {
     title,
     kind: 'ortho',
     pad: 22,
-    bounds: { minU: b.minX, maxU: b.maxX, minV: b.minY, maxV: b.maxY },
+    bounds: { minU: all.minX, maxU: all.maxX, minV: all.minY, maxV: all.maxY },
     draw(p) {
+      // Terrazas (tablas) y piscinas a nivel del suelo, debajo de todo.
+      for (const e of ext.filter((q) => q.tipo === 'terraza')) {
+        p.rect(e.x, e.y, e.w, e.d, 'solid');
+        for (let x = e.x + 0.3; x < e.x + e.w - 0.05; x += 0.3) p.line(x, e.y, x, e.y + e.d, 'thin');
+      }
+      for (const e of ext.filter((q) => q.tipo === 'piscina')) {
+        p.rect(e.x - 0.3, e.y - 0.3, e.w + 0.6, e.d + 0.6, 'solid');
+        p.rect(e.x, e.y, e.w, e.d, 'glass');
+      }
+      for (const e of ext) {
+        const label = e.tipo === 'piscina' ? `PISCINA · prof. ${fmt(e.prof)} m` : 'TERRAZA';
+        // Si la terraza rodea una piscina, su nombre va junto al borde sur.
+        const hasPool = e.tipo === 'terraza' && ext.some((q) => q.tipo === 'piscina' && q.x < e.x + e.w && q.x + q.w > e.x && q.y < e.y + e.d && q.y + q.d > e.y);
+        const cy = hasPool ? e.y + Math.min(0.7, e.d / 4) : e.y + e.d / 2;
+        p.text(e.x + e.w / 2, cy, label, { size: 2.2, weight: '600', maxW: e.w });
+      }
       // Piso de cada recinto y muros (poché).
       for (const r of rooms) p.rect(r.x, r.y, r.w, r.d, 'solid');
       for (const r of rooms) {
@@ -118,7 +136,7 @@ function planView(m, piso, title, cut) {
         }
       }
       // Norte.
-      const nx = p.X(b.maxX) + 8, ny = p.Y(b.maxY) - 4;
+      const nx = p.X(all.maxX) + 8, ny = p.Y(all.maxY) - 4;
       p.raw(`<g transform="translate(${nx.toFixed(2)},${ny.toFixed(2)})"><polygon class="dimfill" points="0,-4 2,3 0,1.6 -2,3"/><text x="0" y="-6" font-size="2.6" text-anchor="middle" font-weight="700">N</text></g>`);
     },
   };

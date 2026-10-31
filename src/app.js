@@ -2,8 +2,8 @@
 
 import { parse } from './parser.js';
 import { buildDocument, drawable, renderSheet, renderView } from './render.js';
-import { EXAMPLES } from './examples.js';
-import { describeToInstructions } from './ai.js';
+import { EXAMPLES, STARTERS } from './examples.js';
+import { describeToInstructions, prepareImage } from './ai.js';
 import { mount3d } from './render3d.js';
 import { svgToDxf, dxfBytes } from './dxf.js';
 
@@ -21,6 +21,7 @@ const store = {
 
 // Dentro de claude.ai (artifact) las descargas y la IA pasan por el visor.
 const host = { downloads: null, sample: null };
+let imageLimits = { maxCount: 4 }; // sin visor: la API acepta varias imágenes
 if (window.claude?.use) {
   $('print').hidden = true; // el visor no permite abrir el diálogo de impresión
   window.claude.use('downloads').then((d) => { host.downloads = d; }).catch(() => {});
@@ -29,6 +30,10 @@ if (window.claude?.use) {
     if (s) {
       $('ai-key').closest('label').hidden = true;
       $('ai-key-note').hidden = true;
+      s.limits?.().then((caps) => {
+        imageLimits = caps?.images || null;
+        if (imageLimits) $('ai-img').accept = imageLimits.mediaTypes.join(',');
+      }).catch(() => { imageLimits = null; });
     }
   }).catch(() => {});
 }
@@ -56,6 +61,31 @@ $('examples').addEventListener('change', (e) => {
   current = -1;
   update(true);
 });
+
+// ------------------------------------------------------- Nuevo plano
+
+const newDialog = $('new-dialog');
+$('new-plan').addEventListener('click', () => newDialog.showModal());
+$('new-cancel').addEventListener('click', () => newDialog.close());
+newDialog.querySelectorAll('[data-new]').forEach((b) => b.addEventListener('click', () => {
+  newDialog.close();
+  src.value = STARTERS[b.dataset.new];
+  $('ai-text').value = '';
+  aiImages = [];
+  renderThumbs();
+  if (!$('examples').querySelector('option[value=""]')) {
+    const o = document.createElement('option');
+    o.value = '';
+    o.textContent = '(tus instrucciones)';
+    $('examples').prepend(o);
+  }
+  $('examples').value = '';
+  current = -1;
+  update(true);
+  document.querySelector('.tabs button[data-tab="text"]').click();
+  src.focus();
+  src.setSelectionRange(src.value.length, src.value.length);
+}));
 
 // ---------------------------------------------------------- Pestañas
 
@@ -269,7 +299,20 @@ function fileName(ext) {
   return `${base}_${part}.${ext}`;
 }
 
+// En la app de Android, guardar e imprimir pasan por el puente nativo.
+const android = window.PlanMakerAndroid;
+
 async function download(blob, name) {
+  if (android) {
+    const b64 = await new Promise((ok, fail) => {
+      const r = new FileReader();
+      r.onload = () => ok(String(r.result).split(',')[1]);
+      r.onerror = fail;
+      r.readAsDataURL(blob);
+    });
+    android.save(name, blob.type, b64);
+    return;
+  }
   if (host.downloads) {
     try {
       await host.downloads.save({ filename: name, data: blob });
@@ -324,7 +367,8 @@ $('dl-png').addEventListener('click', async () => {
 $('print').addEventListener('click', () => {
   if (!svgText) return;
   $('print-area').innerHTML = svgText;
-  window.print();
+  if (android) setTimeout(() => android.print(fileName('pdf').replace(/\.pdf$/, '')), 50);
+  else window.print();
 });
 
 // ------------------------------------------------------- Asistente IA
@@ -337,19 +381,20 @@ $('ai-go').addEventListener('click', async () => {
   if (recog) recog.stop();
   const description = $('ai-text').value.trim();
   const status = $('ai-status');
-  if (!description) {
-    status.textContent = 'Escribe primero una descripción.';
+  if (!description && !aiImages.length) {
+    status.textContent = 'Escribe una descripción o sube una imagen.';
     return;
   }
   const btn = $('ai-go');
   btn.disabled = true;
-  status.textContent = 'Generando instrucciones…';
+  status.textContent = aiImages.length ? 'Leyendo la imagen y generando instrucciones…' : 'Generando instrucciones…';
   try {
     const text = await describeToInstructions({
       apiKey: aiKey.value.trim(),
       description,
       current: $('ai-keep').checked ? src.value : '',
       sample: host.sample,
+      images: aiImages,
     });
     src.value = text;
     current = -1;
@@ -361,6 +406,176 @@ $('ai-go').addEventListener('click', async () => {
   } finally {
     btn.disabled = false;
   }
+});
+
+// ------------------------------------------------- Imágenes adjuntas
+
+let aiImages = [];
+const thumbs = $('ai-thumbs');
+$('ai-img-btn').hidden = $('ai-cam-btn').hidden = false;
+const NO_IMAGES = 'Esta vista de claude.ai no deja enviar imágenes a Claude. Ábrela desde claude.ai en el navegador de tu computadora o escribe la descripción.';
+// Si el visor no acepta imágenes, los botones avisan en vez de abrir la cámara o el selector.
+for (const id of ['ai-img-btn', 'ai-cam-btn']) {
+  $(id).addEventListener('click', (e) => {
+    if (imageLimits) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    $('ai-status').textContent = NO_IMAGES;
+  }, true);
+}
+
+function renderThumbs() {
+  thumbs.replaceChildren(...aiImages.map((img, i) => {
+    const li = document.createElement('li');
+    const im = document.createElement('img');
+    im.src = img.url;
+    im.alt = img.name || `Imagen ${i + 1}`;
+    const rm = document.createElement('button');
+    rm.type = 'button';
+    rm.textContent = '×';
+    rm.title = 'Quitar imagen';
+    rm.setAttribute('aria-label', `Quitar ${im.alt}`);
+    rm.addEventListener('click', () => {
+      URL.revokeObjectURL(img.url);
+      aiImages.splice(i, 1);
+      renderThumbs();
+    });
+    li.append(im, rm);
+    return li;
+  }));
+}
+
+async function addImageFiles(files) {
+  const status = $('ai-status');
+  if (!imageLimits) {
+    status.textContent = NO_IMAGES;
+    return;
+  }
+  const max = imageLimits?.maxCount || 1;
+  for (const f of files) {
+    if (aiImages.length >= max) {
+      status.textContent = `Puedes adjuntar hasta ${max} ${max > 1 ? 'imágenes' : 'imagen'}.`;
+      break;
+    }
+    if (imageLimits?.maxInputBytes && f.size > imageLimits.maxInputBytes) {
+      status.textContent = `"${f.name}" es demasiado grande.`;
+      continue;
+    }
+    try {
+      aiImages.push(await prepareImage(f));
+      status.textContent = 'Imagen lista. Agrega detalles si quieres y pulsa Generar instrucciones.';
+    } catch {
+      status.textContent = `No se pudo abrir "${f.name || 'la imagen'}". Prueba con una foto JPG o PNG.`;
+    }
+  }
+  renderThumbs();
+}
+
+$('ai-img').addEventListener('change', (e) => {
+  const files = [...e.target.files];
+  e.target.value = '';
+  addImageFiles(files);
+});
+
+// ------------------------------------------------------- Tomar foto
+// En el teléfono, el campo con capture="environment" abre la cámara trasera.
+// En una computadora se usa la cámara web en un diálogo; si no hay acceso,
+// se avisa y se puede subir o pegar la imagen.
+
+const isTouch = window.matchMedia?.('(pointer: coarse)').matches;
+const camInput = $('ai-cam');
+const camDialog = $('cam-dialog');
+const camVideo = $('cam-video');
+const CAMERA_ORIGIN = 'https://carlosaperezp77.github.io';
+const CAMERA_PAGE = `${CAMERA_ORIGIN}/PlanMaker/camara.html`;
+let camStream = null;
+
+camInput.addEventListener('change', (e) => {
+  const files = [...e.target.files];
+  e.target.value = '';
+  addImageFiles(files);
+});
+
+function stopCamera() {
+  camStream?.getTracks().forEach((t) => t.stop());
+  camStream = null;
+  camVideo.srcObject = null;
+  if (camDialog.open) camDialog.close();
+}
+
+$('ai-cam-btn').addEventListener('click', async (e) => {
+  if (isTouch || !navigator.mediaDevices?.getUserMedia || !camDialog.showModal) return; // abre la cámara del teléfono
+  e.preventDefault();
+  if (window.claude?.use) {
+    // La vista previa de claude.ai no da acceso a la cámara web: la abre la página auxiliar en otra ventana.
+    const win = window.open(CAMERA_PAGE, 'planmaker-camara', 'popup,width=820,height=720');
+    $('ai-status').textContent = win
+      ? 'Toma la foto en la ventana de la cámara. Si no aparece aquí sola, pulsa Ctrl+V.'
+      : `Tu navegador bloqueó la ventana de la cámara. Abre ${CAMERA_PAGE}, toma la foto y pulsa Ctrl+V aquí.`;
+    return;
+  }
+  const status = $('ai-status');
+  try {
+    camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1920 } }, audio: false });
+    camVideo.srcObject = camStream;
+    camDialog.showModal();
+  } catch (err) {
+    stopCamera();
+    status.textContent = err?.name === 'NotFoundError'
+      ? 'No se encontró ninguna cámara. Usa "Subir imagen" o pega una captura con Ctrl+V.'
+      : 'No hay permiso para usar la cámara aquí. Usa "Subir imagen" o pega una captura con Ctrl+V.';
+  }
+});
+
+$('cam-cancel').addEventListener('click', stopCamera);
+camDialog.addEventListener('close', stopCamera);
+$('cam-shot').addEventListener('click', async () => {
+  const w = camVideo.videoWidth, h = camVideo.videoHeight;
+  if (!w || !h) return;
+  const c = document.createElement('canvas');
+  c.width = w;
+  c.height = h;
+  c.getContext('2d').drawImage(camVideo, 0, 0, w, h);
+  const blob = await new Promise((ok) => c.toBlob(ok, 'image/jpeg', 0.92));
+  stopCamera();
+  if (blob) addImageFiles([new File([blob], 'foto.jpg', { type: 'image/jpeg' })]);
+});
+
+// Fotos que llegan desde la página de la cámara.
+window.addEventListener('message', (e) => {
+  if (e.origin !== CAMERA_ORIGIN || e.data?.type !== 'planmaker-photo' || !(e.data.blob instanceof Blob)) return;
+  showAiTab();
+  addImageFiles([new File([e.data.blob], 'foto.jpg', { type: 'image/jpeg' })]);
+});
+
+const imagesIn = (list) => [...(list || [])].filter((f) => f.type?.startsWith('image/'));
+const showAiTab = () => document.querySelector('.tabs button[data-tab="ai"]').click();
+
+// Pegar una imagen (Ctrl+V / Cmd+V) en cualquier parte la adjunta a "Describir con IA".
+document.addEventListener('paste', (e) => {
+  const files = imagesIn([...(e.clipboardData?.items || [])].filter((it) => it.kind === 'file').map((it) => it.getAsFile()));
+  if (!files.length) return;
+  e.preventDefault();
+  showAiTab();
+  addImageFiles(files);
+});
+
+// Arrastrar y soltar imágenes sobre el panel de la izquierda.
+const editor = document.querySelector('.editor');
+editor.addEventListener('dragover', (e) => {
+  if ([...(e.dataTransfer?.items || [])].some((it) => it.kind === 'file')) {
+    e.preventDefault();
+    editor.classList.add('dropping');
+  }
+});
+editor.addEventListener('dragleave', (e) => { if (!editor.contains(e.relatedTarget)) editor.classList.remove('dropping'); });
+editor.addEventListener('drop', (e) => {
+  editor.classList.remove('dropping');
+  const files = imagesIn(e.dataTransfer?.files);
+  if (!files.length) return;
+  e.preventDefault();
+  showAiTab();
+  addImageFiles(files);
 });
 
 // --------------------------------------------------- Dictado por voz
@@ -432,7 +647,27 @@ function startDictation() {
   }
 }
 
-if (Recognition) {
+// La vista previa de claude.ai no da acceso al micrófono, pero el dictado del
+// sistema (Windows + H, el de macOS o el micrófono del teclado del teléfono)
+// sí escribe en el cuadro de texto. El botón enseña cómo activarlo.
+function systemDictationHint() {
+  const ua = navigator.userAgent;
+  const pf = navigator.userAgentData?.platform || ua;
+  if (/Android|iPhone|iPad|iPod/i.test(ua)) return 'Toca el micrófono 🎤 de tu teclado y habla.';
+  if (/Mac/i.test(pf)) return 'Pulsa dos veces la tecla Fn (o 🎤) para dictar y habla.';
+  if (/Win/i.test(pf)) return 'Pulsa las teclas Windows + H para dictar y habla.';
+  return 'Activa el dictado por voz de tu sistema y habla.';
+}
+
+if (window.claude?.use) {
+  micBtn.hidden = false;
+  micBtn.addEventListener('click', () => {
+    const box = $('ai-text');
+    box.focus();
+    box.setSelectionRange(box.value.length, box.value.length);
+    micStatus.textContent = systemDictationHint();
+  });
+} else if (Recognition) {
   micBtn.hidden = false;
   micBtn.addEventListener('click', () => {
     if (recog) recog.stop();

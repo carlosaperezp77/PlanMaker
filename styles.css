@@ -53,6 +53,18 @@ button, input, select, textarea { font: inherit; color: inherit; }
   border-bottom: 1px solid var(--line);
 }
 .brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 17px; color: var(--accent); }
+.top-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: flex-end; }
+.new-dialog { border: 0; border-radius: 12px; padding: 18px; background: var(--panel); color: var(--ink); width: min(92vw, 520px); }
+.new-dialog::backdrop { background: rgba(0,0,0,.5); }
+.new-dialog h2 { margin: 0 0 4px; font-size: 18px; }
+.new-dialog p { margin: 0 0 14px; color: var(--muted); font-size: 14px; }
+.new-choices { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+.new-choices button { display: flex; flex-direction: column; gap: 4px; text-align: left; padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg, transparent); cursor: pointer; }
+.new-choices button:hover, .new-choices button:focus-visible { border-color: var(--accent); }
+.new-choices span { color: var(--muted); font-size: 13px; }
+.new-foot { display: flex; justify-content: flex-end; margin-top: 14px; }
+.new-foot button { border: 1px solid var(--line); background: var(--panel); border-radius: 8px; padding: 9px 14px; cursor: pointer; }
+#new-plan { padding: 8px 14px; white-space: nowrap; }
 .examples { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 14px; }
 .examples select { max-width: 46vw; }
 select, input[type="password"], input[type="text"] {
@@ -118,6 +130,21 @@ select, input[type="password"], input[type="text"] {
 .mic[aria-pressed="true"] svg { animation: mic-pulse 1.2s ease-in-out infinite; }
 @keyframes mic-pulse { 50% { opacity: .35; } }
 @media (prefers-reduced-motion: reduce) { .mic[aria-pressed="true"] svg { animation: none; } }
+.editor.dropping { outline: 3px dashed var(--accent); outline-offset: -6px; }
+.cam-dialog { border: 0; border-radius: 12px; padding: 12px; background: var(--panel); color: var(--ink); max-width: min(92vw, 720px); }
+.cam-dialog::backdrop { background: rgba(0,0,0,.6); }
+.cam-dialog video { display: block; width: 100%; max-height: 70vh; border-radius: 8px; background: #000; }
+.cam-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
+.cam-actions button:not(.primary) { border: 1px solid var(--line); background: var(--panel); border-radius: 8px; padding: 9px 14px; cursor: pointer; }
+.thumbs { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.thumbs:empty { display: none; }
+.thumbs li { position: relative; }
+.thumbs img { display: block; width: 84px; height: 84px; object-fit: cover; border-radius: 8px; border: 1px solid var(--line); background: #fff; }
+.thumbs button {
+  position: absolute; top: -6px; right: -6px; width: 22px; height: 22px; border-radius: 50%;
+  border: 1px solid var(--line); background: var(--panel); cursor: pointer; line-height: 1; padding: 0; font-size: 14px;
+}
+label.mic { user-select: none; }
 .errors { list-style: none; margin: 0; padding: 0; font-size: 13px; max-height: 30%; overflow: auto; }
 .errors li { color: var(--error); padding: 4px 0; cursor: pointer; }
 .errors li.ok { color: var(--muted); cursor: default; }
@@ -186,6 +213,17 @@ select, input[type="password"], input[type="text"] {
 
 .stage3d { flex: 1; min-height: 0; position: relative; background: var(--stage); touch-action: none; }
 .stage3d canvas { display: block; }
+.r3d-bar {
+  position: absolute; top: 10px; left: 10px; right: 10px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+  pointer-events: none;
+}
+.r3d-bar > * { pointer-events: auto; }
+.r3d-bar button, .r3d-bar select {
+  border: 1px solid var(--line); background: var(--panel); color: var(--ink);
+  border-radius: 999px; padding: 4px 11px; font-size: 13px; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,.12);
+}
+.r3d-bar button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.r3d-bar .sep { width: 4px; }
 .stage3d[data-loading]::after {
   content: attr(data-loading);
   position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted);
@@ -198,6 +236,9 @@ select, input[type="password"], input[type="text"] {
   .editor { border-right: 0; border-bottom: 1px solid var(--line); max-height: 52vh; }
   #src { min-height: 180px; }
   .top { padding: 10px 16px; }
+  .top-actions { gap: 8px; }
+  .examples { font-size: 0; gap: 0; }
+  .examples select { font-size: 14px; max-width: 44vw; }
 }
 
 @media print {

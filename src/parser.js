@@ -125,6 +125,8 @@ function parseEdificio(lines, errors) {
     techo: { tipo: 'plano', altura: 0 },
     rooms: [],
     openings: [],
+    exteriores: [], // terrazas y piscinas a nivel del suelo
+    muebles: true,
   };
   let piso = 1;
   let cursorX = 0;
@@ -209,6 +211,26 @@ function parseEdificio(lines, errors) {
       continue;
     }
 
+    if (kw === 'terraza' || kw === 'deck' || kw === 'piscina' || kw === 'alberca' || kw === 'pileta') {
+      // "terraza 8x5 en 10,0" · "piscina 6x3 en 12,1 prof 1.5"
+      const tipo = kw === 'terraza' || kw === 'deck' ? 'terraza' : 'piscina';
+      const { coords, rest } = takeCoords(text, 'en');
+      const clean = decimalComma(rest);
+      const dm = clean.match(DIMS_RE);
+      if (!dm) {
+        errors.push({ line: n, msg: `Falta el tamaño de la ${tipo}, p. ej. "${tipo} 6x3 en 10,0".` });
+        continue;
+      }
+      const [x, y] = coords || [cursorX + 1, 0];
+      const prof = kv(clean, ['prof', 'profundidad']) ?? 1.4;
+      m.exteriores.push({ tipo, x, y, w: Number(dm[1]), d: Number(dm[2]), prof, line: n });
+      continue;
+    }
+    if (kw === 'muebles' || kw === 'mobiliario' || (kw === 'sin' && /^mueb/.test(norm(words[1] || '')))) {
+      m.muebles = !(kw === 'sin' || /\b(no|sin|ninguno)\b/.test(norm(text.slice(words[0].length))));
+      continue;
+    }
+
     if (kw === 'puerta' || kw === 'ventana' || kw === 'porton' || kw === 'ventanal') {
       const tipo = kw === 'puerta' || kw === 'porton' ? 'puerta' : 'ventana';
       const clean = decimalComma(text);
@@ -241,7 +263,7 @@ function parseEdificio(lines, errors) {
       continue;
     }
 
-    errors.push({ line: n, msg: `No entiendo "${words[0]}". Usa habitacion, puerta, ventana, pisos, altura, muro o techo.` });
+    errors.push({ line: n, msg: `No entiendo "${words[0]}". Usa habitacion, puerta, ventana, terraza, piscina, pisos, altura, muro o techo.` });
   }
 
   if (!m.rooms.length) errors.push({ line: 0, msg: 'Agrega al menos una habitación, p. ej. "habitacion Sala 5x4".' });
