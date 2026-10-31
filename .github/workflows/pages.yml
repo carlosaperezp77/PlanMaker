@@ -22,7 +22,7 @@ jobs:
         with:
           node-version: 22
       - run: npm run build
-      - run: mkdir -p site && cp dist/planmaker.html site/index.html
+      - run: mkdir -p site && cp dist/planmaker.html site/index.html && cp camara.html site/camara.html
       - uses: actions/setup-java@v4
         with:
           distribution: temurin

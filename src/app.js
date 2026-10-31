@@ -486,6 +486,8 @@ const isTouch = window.matchMedia?.('(pointer: coarse)').matches;
 const camInput = $('ai-cam');
 const camDialog = $('cam-dialog');
 const camVideo = $('cam-video');
+const CAMERA_ORIGIN = 'https://carlosaperezp77.github.io';
+const CAMERA_PAGE = `${CAMERA_ORIGIN}/PlanMaker/camara.html`;
 let camStream = null;
 
 camInput.addEventListener('change', (e) => {
@@ -503,12 +505,15 @@ function stopCamera() {
 
 $('ai-cam-btn').addEventListener('click', async (e) => {
   if (isTouch || !navigator.mediaDevices?.getUserMedia || !camDialog.showModal) return; // abre la cámara del teléfono
+  e.preventDefault();
   if (window.claude?.use) {
-    // La vista previa de claude.ai no da acceso a la cámara web: se abre el selector de archivos.
-    $('ai-status').textContent = 'En la computadora, la vista previa de claude.ai no puede usar la cámara web. Elige una foto guardada, o usa Foto desde el teléfono.';
+    // La vista previa de claude.ai no da acceso a la cámara web: la abre la página auxiliar en otra ventana.
+    const win = window.open(CAMERA_PAGE, 'planmaker-camara', 'popup,width=820,height=720');
+    $('ai-status').textContent = win
+      ? 'Toma la foto en la ventana de la cámara. Si no aparece aquí sola, pulsa Ctrl+V.'
+      : `Tu navegador bloqueó la ventana de la cámara. Abre ${CAMERA_PAGE}, toma la foto y pulsa Ctrl+V aquí.`;
     return;
   }
-  e.preventDefault();
   const status = $('ai-status');
   try {
     camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1920 } }, audio: false });
@@ -534,6 +539,13 @@ $('cam-shot').addEventListener('click', async () => {
   const blob = await new Promise((ok) => c.toBlob(ok, 'image/jpeg', 0.92));
   stopCamera();
   if (blob) addImageFiles([new File([blob], 'foto.jpg', { type: 'image/jpeg' })]);
+});
+
+// Fotos que llegan desde la página de la cámara.
+window.addEventListener('message', (e) => {
+  if (e.origin !== CAMERA_ORIGIN || e.data?.type !== 'planmaker-photo' || !(e.data.blob instanceof Blob)) return;
+  showAiTab();
+  addImageFiles([new File([e.data.blob], 'foto.jpg', { type: 'image/jpeg' })]);
 });
 
 const imagesIn = (list) => [...(list || [])].filter((f) => f.type?.startsWith('image/'));

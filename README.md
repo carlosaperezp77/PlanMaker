@@ -53,6 +53,12 @@ página; ahí el botón pone el cursor en el cuadro e indica cómo usar el dicta
 del sistema (Windows + H, Fn dos veces en Mac o el micrófono del teclado del
 teléfono), y la IA funciona sin clave.
 
+## Cámara en la vista previa de claude.ai
+
+La vista previa de claude.ai no puede usar la cámara de la computadora. Ahí
+«Foto» abre `camara.html` (publicada en GitHub Pages) en una ventana aparte;
+la foto vuelve sola a PlanMaker o queda copiada para pegarla con Ctrl+V.
+
 ## App de Android
 
 `android/` envuelve la app web en un WebView. GitHub Actions genera
